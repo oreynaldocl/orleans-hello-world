@@ -2,7 +2,7 @@
 
 namespace Interfaces
 {
-    public interface IHello : IGrainWithGuidKey
+    public interface IHello : IGrainWithIntegerCompoundKey
     {
         Task<string> SayHello(string greeting);
         Task<string> GetContent();

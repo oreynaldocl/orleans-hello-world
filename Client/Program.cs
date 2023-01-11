@@ -7,14 +7,12 @@ namespace Client
 {
     internal class Program
     {
-        static Guid localGuid;
         public static async Task<int> Main(string[] args)
         {
             try
             {
                 using (var client = await ConnectClientAsync())
                 {
-                    localGuid = Guid.NewGuid();
                     Console.WriteLine($"Client IsInitialized: {client.IsInitialized}");
 
                     await DoClientWorkAsync(client);
@@ -55,7 +53,7 @@ namespace Client
 
         static async Task DoClientWorkAsync(IClusterClient client)
         {
-            var friend = client.GetGrain<IHello>(localGuid);
+            var friend = client.GetGrain<IHello>(0, "key");
             var response = await friend.SayHello("Good morning HelloGrain!");
 
             Console.WriteLine($"\n{response}\n");
@@ -65,7 +63,7 @@ namespace Client
 
         static async Task DoClientVerificationAsync(IClusterClient client)
         {
-            var friend = client.GetGrain<IHello>(localGuid);
+            var friend = client.GetGrain<IHello>(0, "key");
             var response = await friend.SayHello("Good evening HelloGrain!");
 
             Console.WriteLine($"\n friend2: {response}\n");
