@@ -2,6 +2,9 @@
 using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
+using Orleans.Runtime;
+using Orleans.Runtime.Messaging;
+using Polly;
 using System.Net;
 
 namespace Client
@@ -12,7 +15,7 @@ namespace Client
         {
             try
             {
-                using (var client = await ConnectClientAsync())
+                using (var client = ConnectClientAsync())
                 {
                     Console.WriteLine($"Client IsInitialized: {client.IsInitialized}");
 
@@ -34,22 +37,33 @@ namespace Client
             }
         }
 
-        static async Task<IClusterClient> ConnectClientAsync()
+        static IClusterClient ConnectClientAsync()
         {
-            var client = new ClientBuilder()
-                .UseLocalhostClustering()
-                .Configure<ClusterOptions>(options =>
+            return Policy<IClusterClient>
+                .Handle<SiloUnavailableException>()
+                .Or<ConnectionFailedException>()
+                .WaitAndRetry(new[] {
+                    TimeSpan.FromSeconds(2),
+                    TimeSpan.FromSeconds(4),
+                    TimeSpan.FromSeconds(8),
+                    TimeSpan.FromSeconds(16),
+                }).Execute(() =>
                 {
-                    options.ClusterId = "dev";
-                    options.ServiceId = "OrleansBasics";
-                })
-                .ConfigureLogging(logging => logging.AddConsole())
-                .Build();
+                    var client = new ClientBuilder()
+                        .UseLocalhostClustering()
+                        .Configure<ClusterOptions>(options =>
+                        {
+                            options.ClusterId = "dev";
+                            options.ServiceId = "OrleansBasics";
+                        })
+                        .ConfigureLogging(logging => logging.AddConsole())
+                        .Build();
 
-            await client.Connect();
-            Console.WriteLine("Client successfully connected to silo host!");
+                    client.Connect().GetAwaiter().GetResult();
+                    Console.WriteLine("Client successfully connected to silo host!");
 
-            return client;
+                    return client;
+                });
         }
 
         static async Task DoClientWorkAsync(IClusterClient client)

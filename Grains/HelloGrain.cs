@@ -16,12 +16,14 @@ namespace Grains
 
         public override Task OnActivateAsync()
         {
+            // CODE RUNS IN SILO
             _logger.LogInformation($"OnActivate is called. ID: {getPrimaryKey()} #################################");
             return base.OnActivateAsync();
         }
 
         public override Task OnDeactivateAsync()
         {
+            // CODE RUNS IN SILO
             _logger.LogInformation($"OnDeactivate is called. ID: {getPrimaryKey()} ---------------------------------");
             return base.OnDeactivateAsync();
         }
@@ -36,8 +38,8 @@ namespace Grains
             var primaryK = this.GetPrimaryKeyLong(out string keyExtension);
             string primaryKey = $"{keyExtension}:{primaryK}";
 
-            // currently when DEACTIVE it destroys the current grain
-            this.DeactivateOnIdle();
+            // when DEACTIVE, the SILO removes from memory
+            //this.DeactivateOnIdle();
 
             _logger.LogInformation($"ID: {primaryKey} SayHello message received: greeting = {greeting}");
             string strs = string.Join("\n", File.ReadAllLines("AFile.txt"));
