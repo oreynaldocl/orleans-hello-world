@@ -4,39 +4,55 @@ using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using System.Net;
 
-try
+namespace Silo
 {
-    var host = await StartSiloAsync();
-    Console.WriteLine("\n\n Press Enter to terminate...\n\n");
-    Console.ReadLine();
-
-    await host.StopAsync();
-    return 0;
-}
-catch (Exception ex)
-{
-    Console.WriteLine(ex);
-    return 1;
-}
-
-static async Task<IHost> StartSiloAsync()
-{
-    var builder = new HostBuilder()
-        .UseOrleans(c =>
+    internal class Program
+    {
+        public static async Task<int> Main(string[] args)
         {
-            c.UseLocalhostClustering()
-            .Configure<ClusterOptions>(options =>
+            try
             {
-                options.ClusterId = "dev";
-                options.ServiceId = "OrleansBasics";
-            })
-            .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(HelloGrain).Assembly).WithReferences())
-            .ConfigureLogging(logging => logging.AddConsole());
-        });
+                var host = await StartSiloAsync();
+                Console.WriteLine("\nSILO STARTED \n Press Enter to terminate...\n\n");
+                Console.ReadLine();
 
-    var host = builder.Build();
-    await host.StartAsync();
+                await host.StopAsync();
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                return -1;
+            }
+        }
 
-    return host;
+        private static async Task<IHost> StartSiloAsync()
+        {
+            var builder = new HostBuilder()
+                .UseOrleans(c =>
+                {
+                    c.UseLocalhostClustering()
+                    .Configure<ClusterOptions>(options =>
+                    {
+                        options.ClusterId = "dev";
+                        options.ServiceId = "OrleansBasics";
+                    })
+                    .Configure<EndpointOptions>(options =>
+                    {
+                        options.SiloPort = 11111;
+                        options.GatewayPort = 30000;
+                        options.AdvertisedIPAddress = IPAddress.Loopback;
+                    })
+                    .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(HelloGrain).Assembly).WithReferences())
+                    .ConfigureLogging(logging => logging.AddConsole());
+                });
+
+            var host = builder.Build();
+            await host.StartAsync();
+
+            return host;
+        }
+    }
 }
