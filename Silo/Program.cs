@@ -1,4 +1,5 @@
 ﻿using Grains;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Orleans;
@@ -30,6 +31,9 @@ namespace Silo
 
         private static async Task<IHost> StartSiloAsync()
         {
+            var config = LoadConfig();
+            var orleansConfig = GetOrleansConfig(config);
+
             var builder = new HostBuilder()
                 .UseOrleans(c =>
                 {
@@ -45,6 +49,11 @@ namespace Silo
                         options.GatewayPort = 30000;
                         options.AdvertisedIPAddress = IPAddress.Loopback;
                     })
+                    .AddAdoNetGrainStorageAsDefault(options => {
+                        options.Invariant = orleansConfig.Invariant;
+                        options.ConnectionString = orleansConfig.ConnectionString;
+                        options.UseJsonFormat = true;
+                    })
                     .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(HelloGrain).Assembly).WithReferences())
                     .ConfigureLogging(logging => logging.AddConsole());
                 });
@@ -54,5 +63,27 @@ namespace Silo
 
             return host;
         }
+
+        private static IConfigurationRoot LoadConfig()
+        {
+            var configurationBuilder = new ConfigurationBuilder();
+            configurationBuilder.AddJsonFile("appsettings.json");
+            var config = configurationBuilder.Build();
+            return config;
+        }
+
+        private static OrleansConfig GetOrleansConfig(IConfigurationRoot config)
+        {
+            var orleansConfig = new OrleansConfig();
+            var section = config.GetSection("OrleansConfiguration");
+            section.Bind(orleansConfig);
+            return orleansConfig;
+        }
+    }
+
+    public class OrleansConfig
+    {
+        public string Invariant { get; set; }
+        public string ConnectionString { get; set; }
     }
 }

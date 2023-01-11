@@ -1,10 +1,12 @@
 ﻿using Interfaces;
 using Microsoft.Extensions.Logging;
 using Orleans;
+using Orleans.Providers;
 
 namespace Grains
 {
-    public class HelloGrain : Grain, IHello
+    [StorageProvider]
+    public class HelloGrain : Grain<GreetingArchive>, IHello
     {
         private readonly ILogger _logger;
         public string content = "";
@@ -33,23 +35,31 @@ namespace Grains
             return Task.FromResult(content);
         }
 
-        public Task<string> SayHello(string greeting)
+        public async Task<string> SayHello(string greeting)
         {
-            var primaryK = this.GetPrimaryKeyLong(out string keyExtension);
-            string primaryKey = $"{keyExtension}:{primaryK}";
 
             // when DEACTIVE, the SILO removes from memory
             //this.DeactivateOnIdle();
+            State.Greetings.Add(greeting);
+            await WriteStateAsync();
 
-            _logger.LogInformation($"ID: {primaryKey} SayHello message received: greeting = {greeting}");
-            string strs = string.Join("\n", File.ReadAllLines("AFile.txt"));
-            content += $"\n Client {primaryKey} said: '{greeting}'. File Content: \n{strs}";
-            return Task.FromResult(content);
+            string primaryKey = getPrimaryKey();
+            _logger.LogInformation($"ID: {primaryKey} SayHello message received: new greeting = {greeting}");
+            string fileContent = string.Join("\n", File.ReadAllLines("AFile.txt"));
+            string allGreetings = string.Join("\n", State.Greetings);
+
+            content = $"######\nClient {primaryKey} said: '{allGreetings}'. File Content: \n{fileContent}";
+            return $"######\nClient {primaryKey} said: '{greeting}'. File Content: \n{fileContent}";
         }
 
         private string getPrimaryKey() {
             var primaryKey = this.GetPrimaryKeyLong(out string keyExtension);
             return $"{keyExtension}:{primaryKey}";
         }
+    }
+
+    public class GreetingArchive
+    {
+        public List<string> Greetings { get; private set; } = new List<string>();
     }
 }
