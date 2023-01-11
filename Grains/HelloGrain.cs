@@ -14,6 +14,18 @@ namespace Grains
             _logger = logger;
         }
 
+        public override Task OnActivateAsync()
+        {
+            _logger.LogInformation($"OnActivate is called. ID: {getPrimaryKey()} #################################");
+            return base.OnActivateAsync();
+        }
+
+        public override Task OnDeactivateAsync()
+        {
+            _logger.LogInformation($"OnDeactivate is called. ID: {getPrimaryKey()} ---------------------------------");
+            return base.OnDeactivateAsync();
+        }
+
         public Task<string> GetContent()
         {
             return Task.FromResult(content);
@@ -24,10 +36,18 @@ namespace Grains
             var primaryK = this.GetPrimaryKeyLong(out string keyExtension);
             string primaryKey = $"{keyExtension}:{primaryK}";
 
+            // currently when DEACTIVE it destroys the current grain
+            this.DeactivateOnIdle();
+
             _logger.LogInformation($"ID: {primaryKey} SayHello message received: greeting = {greeting}");
             string strs = string.Join("\n", File.ReadAllLines("AFile.txt"));
             content += $"\n Client {primaryKey} said: '{greeting}'. File Content: \n{strs}";
             return Task.FromResult(content);
+        }
+
+        private string getPrimaryKey() {
+            var primaryKey = this.GetPrimaryKeyLong(out string keyExtension);
+            return $"{keyExtension}:{primaryKey}";
         }
     }
 }
