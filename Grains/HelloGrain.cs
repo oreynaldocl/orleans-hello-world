@@ -21,9 +21,11 @@ namespace Grains
 
         public Task<string> SayHello(string greeting)
         {
-            _logger.LogInformation("SayHello message received: greeting = {Greeting}", greeting);
+            var primaryKey = this.GetPrimaryKey();
+
+            _logger.LogInformation($"ID: {primaryKey} SayHello message received: greeting = {greeting}");
             string strs = string.Join("\n", File.ReadAllLines("AFile.txt"));
-            content += $"\n Client said: '{greeting}'. File Content: \n{strs}";
+            content += $"\n Client {primaryKey} said: '{greeting}'. File Content: \n{strs}";
             return Task.FromResult(content);
         }
     }
