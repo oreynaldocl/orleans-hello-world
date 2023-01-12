@@ -49,6 +49,7 @@ namespace Silo
                         options.GatewayPort = 30000;
                         options.AdvertisedIPAddress = IPAddress.Loopback;
                     })
+                    .UseDashboard()
                     .AddAdoNetGrainStorageAsDefault(options =>
                     {
                         options.Invariant = orleansConfig.Invariant;

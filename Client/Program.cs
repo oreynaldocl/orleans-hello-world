@@ -11,6 +11,7 @@ namespace Client
 {
     internal class Program
     {
+        private static int Key = 0;
         public static async Task<int> Main(string[] args)
         {
             try
@@ -19,6 +20,12 @@ namespace Client
                 {
                     Console.WriteLine($"Client IsInitialized: {client.IsInitialized}");
 
+                    string? keyNum = Console.ReadLine();
+                    if (!int.TryParse(keyNum, out Key))
+                    {
+                        Console.WriteLine("Using default Key: 0");
+                    }
+                    
                     await DoClientWorkAsync(client);
                     Thread.Sleep(1000 * 2);
                     await DoClientVerificationAsync(client);
@@ -68,7 +75,7 @@ namespace Client
 
         static async Task DoClientWorkAsync(IClusterClient client)
         {
-            var friend = client.GetGrain<IHello>(0, "key");
+            var friend = client.GetGrain<IHello>(Key, "key");
             var response = await friend.SayHello("Good morning HelloGrain!");
 
             Console.WriteLine($"\n{response}\n");
@@ -78,7 +85,7 @@ namespace Client
 
         static async Task DoClientVerificationAsync(IClusterClient client)
         {
-            var friend = client.GetGrain<IHello>(0, "key");
+            var friend = client.GetGrain<IHello>(Key, "key");
             var response = await friend.SayHello("Good evening HelloGrain!");
 
             Console.WriteLine($"\n friend2: {response}\n");
