@@ -49,7 +49,8 @@ namespace Silo
                         options.GatewayPort = 30000;
                         options.AdvertisedIPAddress = IPAddress.Loopback;
                     })
-                    .AddAdoNetGrainStorageAsDefault(options => {
+                    .AddAdoNetGrainStorageAsDefault(options =>
+                    {
                         options.Invariant = orleansConfig.Invariant;
                         options.ConnectionString = orleansConfig.ConnectionString;
                         options.UseJsonFormat = true;

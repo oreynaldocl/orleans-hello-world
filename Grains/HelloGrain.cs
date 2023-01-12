@@ -32,14 +32,16 @@ namespace Grains
 
         public Task<string> GetContent()
         {
-            return Task.FromResult(content);
+            string allGreetings = string.Join("\n", State.Greetings);
+
+            return Task.FromResult($"All greetints: {allGreetings}");
         }
 
         public async Task<string> SayHello(string greeting)
         {
-
+            //await ReadStateAsync();
             // when DEACTIVE, the SILO removes from memory
-            //this.DeactivateOnIdle();
+            this.DeactivateOnIdle();
             State.Greetings.Add(greeting);
             await WriteStateAsync();
 
@@ -48,8 +50,7 @@ namespace Grains
             string fileContent = string.Join("\n", File.ReadAllLines("AFile.txt"));
             string allGreetings = string.Join("\n", State.Greetings);
 
-            content = $"######\nClient {primaryKey} said: '{allGreetings}'. File Content: \n{fileContent}";
-            return $"######\nClient {primaryKey} said: '{greeting}'. File Content: \n{fileContent}";
+            return $"######\nClient {primaryKey} said: '{allGreetings}'.\nFile Content: {fileContent}";
         }
 
         private string getPrimaryKey() {
