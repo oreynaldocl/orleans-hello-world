@@ -35,10 +35,7 @@ namespace Silo.Filters
             }
             catch (Exception ex)
             {
-                var arguments = JsonConvert.SerializeObject(context.Arguments, _jsonSerializerSettings);
-                var result = JsonConvert.SerializeObject(context.Result, _jsonSerializerSettings);
                 _logger.LogError($"LOGGINFILTER {context.Grain.GetType()}.{context.InterfaceMethod.Name}:  threw an exception {nameof(ex)} request", ex);
-                // throw;
             }
         }
 
