@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Silo.Context;
 using Silo.Filters;
 using System.Net;
 
@@ -58,7 +59,8 @@ namespace Silo
 
                     // add DI to inject in LoggingFilter
                     .ConfigureServices(services => {
-                        // need required "s" without it is not registered
+                        services.AddSingleton<IOrleansRequestContext, OrleansRequestContext>();
+                        // need require.d "s" without it is not registered
                         services.AddSingleton(s => CreateGrainMethodsList());
                         services.AddSingleton(s => new JsonSerializerSettings()
                         {

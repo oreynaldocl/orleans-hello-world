@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Reflection;
+using Silo.Context;
 
 namespace Silo.Filters
 {
@@ -10,15 +11,18 @@ namespace Silo.Filters
         private readonly GrainInfo _grainInfo;
         private readonly ILogger<LoggingFilter> _logger;
         private readonly JsonSerializerSettings _jsonSerializerSettings;
+        private readonly IOrleansRequestContext _customContext;
 
         public LoggingFilter(
             GrainInfo grainInfo,
             ILogger<LoggingFilter> logger,
-            JsonSerializerSettings jsonSerializerSettings)
+            JsonSerializerSettings jsonSerializerSettings,
+            IOrleansRequestContext context)
         {
             _grainInfo= grainInfo;
             _logger = logger;
             _jsonSerializerSettings = jsonSerializerSettings;
+            _customContext = context;
         }
 
         public async Task Invoke(IIncomingGrainCallContext context)
@@ -55,7 +59,7 @@ namespace Silo.Filters
                     data = $"result: {result}";
                 }
 
-                _logger.LogInformation($"LOGGINFILTER {context.Grain.GetType()}.{methodName}: {data} request");
+                _logger.LogInformation($"LOGGINFILTER [{_customContext.TraceId}] {context.Grain.GetType()}.{methodName}: {data} request");
             }
         }
 

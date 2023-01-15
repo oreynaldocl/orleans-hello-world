@@ -11,24 +11,21 @@ namespace Client
 {
     internal class Program
     {
-        private static int Key = 0;
         public static async Task<int> Main(string[] args)
         {
             try
             {
                 using (var client = ConnectClientAsync())
                 {
-                    Console.WriteLine($"Client IsInitialized: {client.IsInitialized}\n Grain Num Key=");
+                    Console.WriteLine($"Client IsInitialized: {client.IsInitialized}");
 
-                    string? keyNum = Console.ReadLine();
-                    if (!int.TryParse(keyNum, out Key))
-                    {
-                        Console.WriteLine("Using default Key: 0");
-                    }
-                    
-                    await DoClientWorkAsync(client);
+                    RequestContext.Set("traceId", Guid.NewGuid());
+                    await DoClientWorkAsync(client, GetGrainKey());
+
                     Thread.Sleep(1000 * 2);
-                    await DoClientVerificationAsync(client);
+
+                    RequestContext.Set("traceId", Guid.NewGuid());
+                    await DoClientVerificationAsync(client, GetGrainKey());
                     Console.ReadKey();
                 }
 
@@ -42,6 +39,18 @@ namespace Client
                 Console.ReadKey();
                 return -1;
             }
+        }
+
+        private static int GetGrainKey()
+        {
+            Console.WriteLine("Give Grain Key=");
+            string? keyNum = Console.ReadLine();
+            if (!int.TryParse(keyNum, out int keyNumber))
+            {
+                Console.WriteLine("Using default Key: 0");
+                keyNumber = 0;
+            }
+            return keyNumber;
         }
 
         static IClusterClient ConnectClientAsync()
@@ -73,9 +82,9 @@ namespace Client
                 });
         }
 
-        static async Task DoClientWorkAsync(IClusterClient client)
+        static async Task DoClientWorkAsync(IClusterClient client, int keyNum)
         {
-            var friend = client.GetGrain<IHello>(Key, "key");
+            var friend = client.GetGrain<IHello>(keyNum, "key");
             var response = await friend.SayHello("Good morning HelloGrain!");
 
             Console.WriteLine($"\n{response}\n");
@@ -83,15 +92,14 @@ namespace Client
         }
 
 
-        static async Task DoClientVerificationAsync(IClusterClient client)
+        static async Task DoClientVerificationAsync(IClusterClient client, int keyNum)
         {
-            var friend = client.GetGrain<IHello>(Key, "key");
+            var friend = client.GetGrain<IHello>(keyNum, "key");
             var response = await friend.SayHello("Good evening HelloGrain!");
 
             Console.WriteLine($"\n friend2: {response}\n");
             var friend1Response = await Globals.grainRef.GetContent();
             Console.WriteLine($"friend1: {friend1Response}");
-            Console.WriteLine($"equasl? {friend == Globals.grainRef}");
         }
 
     }

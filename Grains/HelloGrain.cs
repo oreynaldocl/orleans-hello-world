@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Providers;
+using Orleans.Runtime;
 
 namespace Grains
 {
@@ -46,7 +47,9 @@ namespace Grains
             await WriteStateAsync();
 
             string primaryKey = getPrimaryKey();
-            _logger.LogInformation($"ID: {primaryKey} SayHello message received: new greeting = {greeting}");
+            var traceId = RequestContext.Get("traceId");
+            _logger.LogInformation($"ID: {primaryKey}, traceId: {traceId} SayHello message received: new greeting = {greeting}");
+
             string fileContent = string.Join("\n", File.ReadAllLines("AFile.txt"));
             string allGreetings = string.Join("\n", State.Greetings);
 
