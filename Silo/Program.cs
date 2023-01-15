@@ -1,10 +1,14 @@
 ﻿using Grains;
+using Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Silo.Filters;
 using System.Net;
 
 namespace Silo
@@ -49,7 +53,26 @@ namespace Silo
                         options.GatewayPort = 30000;
                         options.AdvertisedIPAddress = IPAddress.Loopback;
                     })
+
                     .UseDashboard()
+
+                    // add DI to inject in LoggingFilter
+                    .ConfigureServices(services => {
+                        // need required "s" without it is not registered
+                        services.AddSingleton(s => CreateGrainMethodsList());
+                        services.AddSingleton(s => new JsonSerializerSettings()
+                        {
+                            NullValueHandling = NullValueHandling.Ignore,
+                            Formatting = Formatting.None,
+                            TypeNameHandling = TypeNameHandling.None,
+                            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+                        });
+                    })
+
+                    // capture logging of Grain in server side
+                    .AddIncomingGrainCallFilter<LoggingFilter>()
+
                     .AddAdoNetGrainStorageAsDefault(options =>
                     {
                         options.Invariant = orleansConfig.Invariant;
@@ -64,6 +87,17 @@ namespace Silo
             await host.StartAsync();
 
             return host;
+        }
+
+        private static GrainInfo CreateGrainMethodsList()
+        {
+            IEnumerable<string> methodNames = typeof(IHello).Assembly.GetTypes()
+                                    .Where(type => type.IsInterface)
+                                    .SelectMany(type => type.GetMethods()
+                                                .Select(methodInfo => methodInfo.Name)
+                                    ).Distinct();
+
+            return new GrainInfo() { Methods = methodNames.ToList() };
         }
 
         private static IConfigurationRoot LoadConfig()
@@ -81,11 +115,5 @@ namespace Silo
             section.Bind(orleansConfig);
             return orleansConfig;
         }
-    }
-
-    public class OrleansConfig
-    {
-        public string Invariant { get; set; }
-        public string ConnectionString { get; set; }
     }
 }

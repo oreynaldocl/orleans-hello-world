@@ -18,7 +18,7 @@ namespace Client
             {
                 using (var client = ConnectClientAsync())
                 {
-                    Console.WriteLine($"Client IsInitialized: {client.IsInitialized}");
+                    Console.WriteLine($"Client IsInitialized: {client.IsInitialized}\n Grain Num Key=");
 
                     string? keyNum = Console.ReadLine();
                     if (!int.TryParse(keyNum, out Key))
