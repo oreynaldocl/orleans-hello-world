@@ -72,6 +72,8 @@ namespace Silo
                         });
                     })
 
+                    .AddStateStorageBasedLogConsistencyProvider("StateStorage")
+
                     // capture logging of Grain in server side
                     .AddIncomingGrainCallFilter<LoggingFilter>()
 

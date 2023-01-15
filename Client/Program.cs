@@ -19,13 +19,14 @@ namespace Client
                 {
                     Console.WriteLine($"Client IsInitialized: {client.IsInitialized}");
 
-                    RequestContext.Set("traceId", Guid.NewGuid());
-                    await DoClientWorkAsync(client, GetGrainKey());
+                    await CallGreetingsGrain(client, GetGrainKey());
+                    //RequestContext.Set("traceId", Guid.NewGuid());
+                    //await DoClientWorkAsync(client, GetGrainKey());
 
-                    Thread.Sleep(1000 * 2);
+                    //Thread.Sleep(1000 * 2);
 
-                    RequestContext.Set("traceId", Guid.NewGuid());
-                    await DoClientVerificationAsync(client, GetGrainKey());
+                    //RequestContext.Set("traceId", Guid.NewGuid());
+                    //await DoClientVerificationAsync(client, GetGrainKey());
                     Console.ReadKey();
                 }
 
@@ -43,7 +44,7 @@ namespace Client
 
         private static int GetGrainKey()
         {
-            Console.WriteLine("Give Grain Key=");
+            Console.Write("Give Grain Key=");
             string? keyNum = Console.ReadLine();
             if (!int.TryParse(keyNum, out int keyNumber))
             {
@@ -82,13 +83,24 @@ namespace Client
                 });
         }
 
+        static async Task CallGreetingsGrain(IClusterClient client, int grainKey)
+        {
+            var grain = client.GetGrain<IGreetingsGrain>(grainKey);
+            await grain.SendGreetings("Hello");
+
+            var grain1 = client.GetGrain<IGreetingsGrain>(grainKey);
+            await grain1.SendGreetings("Good afternoon");
+
+            var grain2 = client.GetGrain<IGreetingsGrain>(grainKey);
+            await grain2.SendGreetings("Good bye");
+        }
+
         static async Task DoClientWorkAsync(IClusterClient client, int keyNum)
         {
-            var friend = client.GetGrain<IHello>(keyNum, "key");
-            var response = await friend.SayHello("Good morning HelloGrain!");
-
+            var grain = client.GetGrain<IHello>(keyNum, "key");
+            var response = await grain.SayHello("Good morning HelloGrain!");
             Console.WriteLine($"\n{response}\n");
-            Globals.grainRef = friend;
+            Globals.grainRef = grain;
         }
 
 
