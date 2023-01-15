@@ -16,15 +16,23 @@ namespace Silo
 {
     internal class Program
     {
+        static readonly ManualResetEvent _siloStopped = new ManualResetEvent(false);
+        static bool siloStopping;
+        static readonly object syncLock = new object();
+        static IHost host;
+
         public static async Task<int> Main(string[] args)
         {
             try
             {
-                var host = await StartSiloAsync();
-                Console.WriteLine("\nSILO STARTED \n Press Enter to terminate...\n\n");
-                Console.ReadLine();
+                SetupApplicationShutdown();
 
-                await host.StopAsync();
+                host = await StartSiloAsync();
+                Console.WriteLine("\nSILO STARTED\nCTRL+C to TERMINATE...\n\n");
+
+                _siloStopped.WaitOne();
+                Console.WriteLine("SILO WAS STOPPED");
+                Console.ReadKey();
                 return 0;
             }
             catch (Exception ex)
@@ -91,6 +99,29 @@ namespace Silo
             await host.StartAsync();
 
             return host;
+        }
+
+        static void SetupApplicationShutdown()
+        {
+            Console.CancelKeyPress += Console_CancelKeyPress;
+        }
+
+        private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
+            lock (syncLock)
+            {
+                if (!siloStopping) {
+                    siloStopping = true;
+                    Task.Run(StopSilo).Ignore();
+                }
+            }
+        }
+
+        static async Task StopSilo()
+        {
+            await host.StopAsync();
+            _siloStopped.Set();
         }
 
         private static GrainInfo CreateGrainMethodsList()

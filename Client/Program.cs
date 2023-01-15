@@ -19,14 +19,14 @@ namespace Client
                 {
                     Console.WriteLine($"Client IsInitialized: {client.IsInitialized}");
 
+                    RequestContext.Set("traceId", Guid.NewGuid());
                     await CallGreetingsGrain(client, GetGrainKey());
-                    //RequestContext.Set("traceId", Guid.NewGuid());
-                    //await DoClientWorkAsync(client, GetGrainKey());
+                    await DoClientWorkAsync(client, GetGrainKey());
 
-                    //Thread.Sleep(1000 * 2);
+                    Thread.Sleep(1000 * 2);
 
-                    //RequestContext.Set("traceId", Guid.NewGuid());
-                    //await DoClientVerificationAsync(client, GetGrainKey());
+                    RequestContext.Set("traceId", Guid.NewGuid());
+                    await DoClientVerificationAsync(client, GetGrainKey());
                     Console.ReadKey();
                 }
 
