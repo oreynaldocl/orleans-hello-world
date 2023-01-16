@@ -13,7 +13,7 @@ namespace DbMigration
 
             var upgrader =
                 DeployChanges.To
-                    .SqlDatabase(connectionString)
+                    .MySqlDatabase(connectionString)
                     .WithExecutionTimeout(TimeSpan.FromMinutes(10))
                     .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
                     .WithExecutionTimeout(TimeSpan.FromMinutes(10))

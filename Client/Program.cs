@@ -2,10 +2,10 @@
 using Microsoft.Extensions.Logging;
 using Orleans;
 using Orleans.Configuration;
+using Orleans.Hosting;
 using Orleans.Runtime;
 using Orleans.Runtime.Messaging;
 using Polly;
-using System.Net;
 
 namespace Client
 {
@@ -17,16 +17,23 @@ namespace Client
             {
                 using (var client = ConnectClientAsync())
                 {
+                    Thread.Sleep(1000 * 3);
                     Console.WriteLine($"Client IsInitialized: {client.IsInitialized}");
 
                     RequestContext.Set("traceId", Guid.NewGuid());
-                    await CallGreetingsGrain(client, GetGrainKey());
                     await DoClientWorkAsync(client, GetGrainKey());
+                    Thread.Sleep(1000 * 1);
+                    int lastGrain = GetGrainKey();
+                    await DoClientVerificationAsync(client, lastGrain);
 
-                    Thread.Sleep(1000 * 2);
-
-                    RequestContext.Set("traceId", Guid.NewGuid());
-                    await DoClientVerificationAsync(client, GetGrainKey());
+                    var newGuid = Guid.NewGuid();
+                    RequestContext.Set("traceId", newGuid);
+                    Console.WriteLine($"Starting 60 grains with guid {newGuid}");
+                    for (int i = 0; i < 60; i++)
+                    {
+                        await CallGreetingsGrain(client, lastGrain+i);
+                    }
+                    Console.WriteLine("Starting 60 grains");
                     Console.ReadKey();
                 }
 
@@ -67,7 +74,12 @@ namespace Client
                 }).Execute(() =>
                 {
                     var client = new ClientBuilder()
-                        .UseLocalhostClustering()
+                        // just one cluster
+                        //.UseLocalhostClustering()
+                        .UseAdoNetClustering(options => {
+                            options.Invariant = "MySql.Data.MySqlClient";
+                            options.ConnectionString = "Server=localhost;Uid=root;Pwd=Control*123;Persist Security Info=true;Database=OrleansHelloWorld;SslMode=none;";
+                        })
                         .Configure<ClusterOptions>(options =>
                         {
                             options.ClusterId = "dev";

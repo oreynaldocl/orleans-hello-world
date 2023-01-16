@@ -50,20 +50,24 @@ namespace Silo
             var builder = new HostBuilder()
                 .UseOrleans(c =>
                 {
-                    c.UseLocalhostClustering()
-                    .Configure<ClusterOptions>(options =>
+                    c.Configure<ClusterOptions>(options =>
                     {
                         options.ClusterId = "dev";
                         options.ServiceId = "OrleansBasics";
                     })
+                    // just one cluster
+                    //.UseLocalhostClustering()
+                    // use clustering
+                    .UseAdoNetClustering(options => {
+                        options.Invariant = orleansConfig.Invariant;
+                        options.ConnectionString = orleansConfig.ConnectionString;
+                    })
                     .Configure<EndpointOptions>(options =>
                     {
-                        options.SiloPort = 11111;
-                        options.GatewayPort = 30000;
+                        options.SiloPort = orleansConfig.SiloPort;
+                        options.GatewayPort = orleansConfig.GatewayPort;
                         options.AdvertisedIPAddress = IPAddress.Loopback;
                     })
-
-                    .UseDashboard()
 
                     // add DI to inject in LoggingFilter
                     .ConfigureServices(services => {
@@ -93,6 +97,11 @@ namespace Silo
                     })
                     .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(HelloGrain).Assembly).WithReferences())
                     .ConfigureLogging(logging => logging.AddConsole());
+
+                    if (orleansConfig.UseDashboard)
+                    {
+                        c.UseDashboard();
+                    }
                 });
 
             var host = builder.Build();
